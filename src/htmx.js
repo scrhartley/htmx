@@ -252,6 +252,26 @@ var htmx = (function() {
        */
       scrollIntoViewOnBoost: true,
       /**
+       * The swap value for boosted elements when not otherwise specified, see **[hx-swap](https://htmx.org/attributes/hx-swap)** for values.
+       * When the value is not set or does not include an override, then 'innerHTML' is used for the [swap style]({@linkcode HtmxSwapStyle}).
+       * @type string|null
+       * @default null
+       */
+      defaultBoostSwap: null,
+      /**
+       * The target value for boosted elements when not otherwise specified, see **[hx-target](https://htmx.org/attributes/hx-target)** for values.
+       * When not set, then the document body is used.
+       * @type string|null
+       * @default null
+       */
+      defaultBoostTarget: null,
+      /**
+       * The select value for boosted elements when not otherwise specified, see **[hx-select](https://htmx.org/attributes/hx-select)** for values.
+       * @type string|null
+       * @default null
+       */
+      defaultBoostSelect: null,
+      /**
        * The cache to store evaluated trigger specifications into.
        * You may define a simple object to use a never-clearing cache, or implement your own system using a [proxy object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Proxy)
        * @type {Object|null}
@@ -1383,13 +1403,19 @@ var htmx = (function() {
       } else {
         return querySelectorExt(elt, targetStr)
       }
-    } else {
-      const data = getInternalData(elt)
-      if (data.boosted) {
-        return getDocument().body
+    } else if (getInternalData(elt).boosted) {
+      const boostStr = htmx.config.defaultBoostTarget
+      if (boostStr) {
+        if (boostStr === 'this') {
+          return elt
+        } else {
+          return querySelectorExt(elt, boostStr)
+        }
       } else {
-        return elt
+        return getDocument().body
       }
+    } else {
+      return elt
     }
   }
 
@@ -3683,14 +3709,15 @@ var htmx = (function() {
  * @returns {HtmxSwapSpecification}
  */
   function getSwapSpecification(elt, swapInfoOverride) {
-    const swapInfo = swapInfoOverride || getClosestAttributeValue(elt, 'hx-swap')
+    const eltIsBoosted = getInternalData(elt).boosted
+    const swapInfo = swapInfoOverride || getClosestAttributeValue(elt, 'hx-swap') || (eltIsBoosted ? htmx.config.defaultBoostSwap : null)
     /** @type HtmxSwapSpecification */
     const swapSpec = {
-      swapStyle: getInternalData(elt).boosted ? 'innerHTML' : htmx.config.defaultSwapStyle,
+      swapStyle: eltIsBoosted ? 'innerHTML' : htmx.config.defaultSwapStyle,
       swapDelay: htmx.config.defaultSwapDelay,
       settleDelay: htmx.config.defaultSettleDelay
     }
-    if (htmx.config.scrollIntoViewOnBoost && getInternalData(elt).boosted && !isAnchorLink(elt)) {
+    if (htmx.config.scrollIntoViewOnBoost && eltIsBoosted && !isAnchorLink(elt)) {
       swapSpec.show = 'top'
     }
     if (swapInfo) {
@@ -4837,7 +4864,7 @@ var htmx = (function() {
       }
 
       const selectOOB = getClosestAttributeValue(elt, 'hx-select-oob')
-      const select = getClosestAttributeValue(elt, 'hx-select')
+      const select = getClosestAttributeValue(elt, 'hx-select') || (responseInfo.boosted ? htmx.config.defaultBoostSelect : null)
 
       let doSwap = function() {
         try {

@@ -205,4 +205,180 @@ describe('hx-boost attribute', function() {
     this.server.respond()
     div.innerHTML.should.equal('Boosted!')
   })
+
+  it('the default boost swap only applies when boosting', function() {
+    var originalSwap = htmx.config.defaultBoostSwap
+    try {
+      htmx.config.defaultBoostSwap = 'textContent'
+      this.server.respondWith('GET', '/test', '&amp;')
+
+      var a = make('<a href="/test" hx-target="this" hx-boost="true">Foo</a>')
+      a.click()
+      this.server.respond()
+      a.textContent.should.equal('&amp;')
+
+      var a = make('<a hx-get="/test">Foo</a>')
+      a.click()
+      this.server.respond()
+      a.textContent.should.equal('&')
+    } finally {
+      htmx.config.defaultBoostSwap = originalSwap
+    }
+  })
+
+  it('the default boost select only applies when boosting', function() {
+    var originalSelect = htmx.config.defaultBoostSelect
+    try {
+      htmx.config.defaultBoostSelect = '#inner'
+      this.server.respondWith('GET', '/test', '<div><span id="inner">Result</span></div>')
+
+      var a = make('<a href="/test" hx-target="this" hx-boost="true">Foo</a>')
+      a.click()
+      this.server.respond()
+      a.innerHTML.should.equal('<span id="inner">Result</span>')
+
+      var a = make('<a hx-get="/test">Foo</a>')
+      a.click()
+      this.server.respond()
+      a.innerHTML.should.equal('<div><span id="inner">Result</span></div>')
+    } finally {
+      htmx.config.defaultBoostSelect = originalSelect
+    }
+  })
+
+  it('the default boost target only applies when boosting', function() {
+    var originalTarget = htmx.config.defaultBoostTarget
+    this.server.respondWith('GET', '/test', 'Result')
+    try {
+      htmx.config.defaultBoostTarget = '#d1'
+      var div = make('<div id="d1"><a id="a1" href="/test" hx-boost="true">Foo</a></div>')
+      var a = byId('a1')
+      a.click()
+      this.server.respond()
+      div.innerHTML.should.equal('Result')
+
+      htmx.config.defaultBoostTarget = '#d2'
+      var div = make('<div id="d2"><a id="a2" hx-get="/test">Foo</a></div>')
+      var a = byId('a2')
+      a.click()
+      this.server.respond()
+      a.innerHTML.should.equal('Result')
+    } finally {
+      htmx.config.defaultBoostTarget = originalTarget
+    }
+  })
+
+  it('the default boost swap should be overridden when hx-swap is used', function() {
+    var originalSwap = htmx.config.defaultBoostSwap
+    try {
+      htmx.config.defaultBoostSwap = 'textContent settle:432ms'
+      this.server.respondWith('GET', '/test', '<div>Result</div>')
+      var swapSpec = htmx._('getSwapSpecification') // internal function for swap spec
+
+      var div = make('<div><a id="a1" href="/test" hx-target="this" hx-boost="true" hx-swap="afterend">Foo</a></div>')
+      var a = byId('a1')
+      swapSpec(a).settleDelay.should.equal(htmx.config.defaultSettleDelay)
+
+      a.click()
+      this.server.respond()
+      div.children.length.should.equal(2)
+    } finally {
+      htmx.config.defaultBoostSwap = originalSwap
+    }
+  })
+
+  it('the default boost select should be overridden when hx-select is used', function() {
+    var originalSelect = htmx.config.defaultBoostSelect
+    try {
+      htmx.config.defaultBoostSelect = '#r1'
+      this.server.respondWith('GET', '/test', '<span id="r1"></span> <span id="r2"></span>')
+
+      var a = make('<a href="/test" hx-target="this" hx-boost="true" hx-select="#r2">Foo</a>')
+      a.click()
+      this.server.respond()
+      a.firstElementChild.id.should.equal('r2')
+    } finally {
+      htmx.config.defaultBoostSelect = originalSelect
+    }
+  })
+
+  it('the default boost target should be overridden when hx-target is used', function() {
+    var originalTarget = htmx.config.defaultBoostTarget
+    try {
+      htmx.config.defaultBoostTarget = '#d1'
+      this.server.respondWith('GET', '/test', 'Result')
+
+      var div = make('<div>' +
+                      '  <div id="d1"></div>' +
+                      '  <div id="d2"></div>' +
+                      '  <a id="a1" href="/test" hx-target="#d2" hx-boost="true"></a>' +
+                      '</div>')
+      var a = byId('a1')
+      a.click()
+      this.server.respond()
+      div.querySelector(':not(:empty)').id.should.equal('d2')
+    } finally {
+      htmx.config.defaultBoostTarget = originalTarget
+    }
+  })
+
+  it('the default boost target should accept "this" as a value', function() {
+    var originalTarget = htmx.config.defaultBoostTarget
+    try {
+      htmx.config.defaultBoostTarget = 'this'
+      this.server.respondWith('GET', '/test', 'Result')
+
+      var a = make('<a id="a1" href="/test" hx-boost="true">Foo</a>')
+      a.click()
+      this.server.respond()
+      a.innerHTML.should.equal('Result')
+    } finally {
+      htmx.config.defaultBoostTarget = originalTarget
+    }
+  })
+
+  it('the default boost swap should only override boost scolling when the modifier is specified', function() {
+    var originalSwap = htmx.config.defaultBoostSwap
+    var originalScroll = htmx.config.scrollIntoViewOnBoost
+    try {
+      var swapSpec = htmx._('getSwapSpecification') // internal function for swap spec
+      var a = make('<a href="/test" hx-target="this" hx-boost="true">Foo</a>')
+
+      htmx.config.defaultBoostSwap = 'innerHTML show:bottom'
+      htmx.config.scrollIntoViewOnBoost = true
+      swapSpec(a).show.should.equal('bottom')
+
+      htmx.config.defaultBoostSwap = 'innerHTML'
+      htmx.config.scrollIntoViewOnBoost = true
+      swapSpec(a).show.should.equal('top')
+
+      htmx.config.defaultBoostSwap = 'innerHTML'
+      htmx.config.scrollIntoViewOnBoost = false
+      should.equal(swapSpec(a).show, undefined)
+    } finally {
+      htmx.config.defaultBoostSwap = originalSwap
+      htmx.config.scrollIntoViewOnBoost = originalScroll
+    }
+  })
+
+  it('a default boost swap should use innerHTML swap style when missing', function() {
+    var originalSwap = htmx.config.defaultBoostSwap
+    var originalStyle = htmx.config.defaultSwapStyle
+    htmx.config.defaultSwapStyle = 'textContent' // show it's irrelevant
+    try {
+      var swapSpec = htmx._('getSwapSpecification') // internal function for swap spec
+      var a = make('<a href="/test" hx-target="this" hx-boost="true">Foo</a>')
+
+      htmx.config.defaultBoostSwap = 'outerHTML settle:234ms'
+      swapSpec(a).swapStyle.should.equal('outerHTML')
+      swapSpec(a).settleDelay.should.equal(234)
+
+      htmx.config.defaultBoostSwap = 'settle:345ms'
+      swapSpec(a).swapStyle.should.equal('innerHTML')
+      swapSpec(a).settleDelay.should.equal(345)
+    } finally {
+      htmx.config.defaultBoostSwap = originalSwap
+      htmx.config.defaultSwapStyle = originalStyle
+    }
+  })
 })
