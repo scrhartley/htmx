@@ -137,6 +137,7 @@ See the documentation on [configuring swapping](@/docs.md#modifying_swapping_beh
 
 * `detail.elt` - the target of the swap
 * `detail.xhr` - the `XMLHttpRequest`
+* `detail.boosted` - true if the request is via an element using [`hx-boost`](@/attributes/hx-boost.md)
 * `detail.requestConfig` - the configuration of the AJAX request
 * `detail.requestConfig.elt` - the element that dispatched the request
 * `detail.shouldSwap` - if the content will be swapped (defaults to `false` for non-200 response codes)
