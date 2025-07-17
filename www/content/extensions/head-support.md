@@ -19,7 +19,7 @@ The fastest way to install `head-support` is to load it via a CDN. Remember to a
 ```HTML
 <head>
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.6/dist/htmx.min.js" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/htmx-ext-head-support@2.0.2" integrity="sha384-cvMqHzjCJsOHgGuyB3sWXaUSv/Krm0BdzjuI1rtkjCbL1l1oHJx+cHyVRJhyuEz0" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/htmx-ext-head-support@2.0.2/head-support.js" integrity="sha384-alEpTwaoXBHw9xh1d3fDZ4lNnOqQYkcIaRQTSQXgSZnAhcnj1H4F27lOZ1Eci1Sp" crossorigin="anonymous"></script>
 </head>
 <body hx-ext="head-support">
 ...
